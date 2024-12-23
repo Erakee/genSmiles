@@ -15,7 +15,7 @@ class Encoder(torch.nn.Module):
                             fc_dims[0], device=self.device),
             torch.nn.ReLU()
         )
-        for i in range(1, len(fc_dims)):
+        for i in range(1, len(fc_dims)):  # [1,3)
             self.fc.append(torch.nn.Linear(
                 fc_dims[i - 1], fc_dims[i], device=self.device))
             self.fc.append(torch.nn.ReLU())
@@ -119,32 +119,66 @@ class VAE(object):
                                hidden_dim, num_hidden, decoder_state_fname, device)
 
     def reconstruction_quality_per_sample(self, X):
+        """计算重构质量
+        
+        Args:
+            X: 输入的one-hot编码分子表示
+        Returns:
+            diff: 重构准确度（每个位置正确重构的数量）
+        """
         self.encoder.eval()
         self.decoder.eval()
+        
+        # 1. 通过编码器获取隐空间表示
         latent_vec, mu, logvar = self.encoder(X)
+        # 2. 通过解码器重构输入
         pred_y = self.decoder(mu, X)
         # reconstruction_loss, kld_loss = self.loss_per_sample(pred_y, X, mu, logvar)
+        
+        # 3. 将预测转换为one-hot形式
         pred_one_hot = torch.zeros_like(X, dtype=X.dtype)
         pred_y_argmax = torch.nn.functional.softmax(
             pred_y, dim=2).argmax(dim=2)
         for i in range(pred_one_hot.shape[0]):
             for j in range(pred_one_hot.shape[1]):
                 pred_one_hot[i, j, pred_y_argmax[i, j]] = 1
+        
+        # 4. 计算重构准确度
         diff = self.decoder.maxLength - \
             torch.abs(pred_one_hot - X).sum(dim=-1).sum(dim=-1) * 0.5
         return diff
 
     def sample(self, nSample):
+        """从隐空间采样
+        
+        Args:
+            nSample: 采样数量
+        Returns:
+            生成的token序列
+        """
+        # 从标准正态分布采样
         latent_vec = torch.randn(
             (nSample, self.latent_dim), device=self.device)
+        # 通过解码器生成分子
         y = self.decoder(latent_vec, None, freerun=True)
         numVectors = y.argmax(dim=2) + 2
         return numVectors.cpu(), None
 
     def latent_space_quality(self, nSample, tokenizer=None):
+        """评估隐空间质量
+        
+        Args:
+            nSample: 采样数量
+            tokenizer: 分词器
+        Returns:
+            有效SMILES的数量
+        """
         self.decoder.eval()
+        # 从隐空间采样并生成分子
         numVectors, _ = self.sample(nSample)
+        # 将数字序列转换回SMILES字符串
         smilesStrs = tokenizer.getSmiles(numVectors)
+        # 检查每个SMILES的有效性
         validSmilesStrs = []
         for sm in smilesStrs:
             if utils.isValidSmiles(sm):
@@ -180,8 +214,8 @@ class VAE(object):
                 loss = reconstruction_mean + kld_mean
                 encoderOptimizer.zero_grad()
                 decoderOptimizer.zero_grad()
-                # torch.nn.utils.clip_grad_norm_(self.encoder.parameters(), 1)
-                # torch.nn.utils.clip_grad_norm_(self.decoder.parameters(), 1)
+                torch.nn.utils.clip_grad_norm_(self.encoder.parameters(), 1)
+                torch.nn.utils.clip_grad_norm_(self.decoder.parameters(), 1)
                 loss.backward()
                 encoderOptimizer.step()
                 decoderOptimizer.step()

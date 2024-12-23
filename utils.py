@@ -49,6 +49,13 @@ def get_tokenizer():
     return tokenizer
 
 def isValidSmiles(smiles):
+    """检查SMILES是否有效
+    
+    Args:
+        smiles: SMILES字符串
+    Returns:
+        bool: 是否是有效的SMILES
+    """
     if smiles == '':
         return False
     mol = Chem.MolFromSmiles(smiles)

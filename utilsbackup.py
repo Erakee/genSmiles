@@ -5,10 +5,9 @@ import rdkit.Chem.AllChem as AllChem
 import rdkit.DataStructs as DataStructs
 from tokens import Tokenizer, getTokenizer
 
-# suppress rdkit warnings
-from rdkit import rdBase, RDLogger
+# suppress rdkit error
+from rdkit import rdBase
 rdBase.DisableLog('rdApp.error')
-RDLogger.DisableLog('rdApp.*')
 
 def __load_config(fyaml='config.yaml'):
     with open(fyaml, 'r') as f:
@@ -89,9 +88,7 @@ class SimilEvaluator(object):
 
     @staticmethod
     def genFP(mol):
-        from rdkit.Chem import rdMolDescriptors
-        return rdMolDescriptors.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=1024, useFeatures=True)
-        # return AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=1024, useFeatures=True)
+        return AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=1024, useFeatures=True)
 
     def getSimil(self, smiles):
         if len(smiles) < 1 or len(smiles) >= self.maxLength:

@@ -10,12 +10,11 @@ chembl_smiles = []
 chembl_fps = []
 with open(utils.config['fname_dataset'], 'r') as f:
     chembl_smiles = set([sm.strip() for sm in f.readlines()])
-### todo 
+### todo
 # 研究http://www.dalkescientific.com/writings/diary/archive/2020/10/02/using_rdkit_bulktanimotosimilarity.html 
 # 生成 'dataset/fps.pkl'
 # 搞懂评价标准，如何评价生成分子的质量 
 # 使用含能分子，训练vae， 采样， 分析
-
 # 读取预计算的分子指纹
 with open(utils.config['fname_fps'], 'rb') as f:
     chembl_fps = pickle.load(f)
@@ -60,6 +59,7 @@ def analysis(fname, train_data=False):
         # - simil_mean/std: 与训练集的平均/标准差相似度，适中最好，太高说明过拟合，太低说明偏离化学空间
         # - weight_mean/std: 分子量的平均值/标准差，应该与训练集接近，用于检查是否保持了基本的分子特征 
         # 一次测试运行的结果输出valid= 61.9 unique= 61.9 new= 61.7 simil_mean= 0.546 simil_std= 0.102 weight_mean=  413.2 weight_std=  107.8
+        # 上次跑的是原数据集，重新用em数据集训练并sample后跑的valid= 64.2 unique= 62.6 new= 56.0 simil_mean= 0.515 simil_std= 0.171 weight_mean=  197.5 weight_std=   36.8
         print("%s: valid= %.1f unique= %.1f new= %.1f simil_mean= %.3f simil_std= %.3f weight_mean= %6.1f weight_std= %6.1f" % 
               (fname, len(reinforce_smiles) / 100, len(unique_reinforce_smiles) / 100, 
                len(new_reinforce_smiles) / 100, simil.mean(), simil.std(), weight.mean(), weight.std()))
@@ -70,7 +70,7 @@ def analysis(fname, train_data=False):
 # 分析训练数据
 analysis(utils.config['fname_dataset'], train_data=True)
 # 分析不同模型生成的分子
-# for fname in ('rnn.smi', 'vae.smi', 'reinforce.smi', 'reinvent.smi'):
-fname ='vae.smi'
-fname = os.path.join(utils.config['sampled_dir'], fname)
-analysis(fname)
+for fname in ('rnn.smi', 'vae.smi'):  #, 'reinforce.smi', 'reinvent.smi'):
+    # fname ='vae.smi'
+    fname = os.path.join(utils.config['sampled_dir'], fname)
+    analysis(fname)

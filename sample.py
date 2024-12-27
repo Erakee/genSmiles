@@ -7,19 +7,19 @@ import rnn
 import vae
 import torch
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument('-m', '--model', type=str)
-# parser.add_argument('-p', '--parameter', type=str)
-# parser.add_argument('-o', '--output', type=str)
-# parser.add_argument('--gpu', action='store_true', default=False)
-# args = parser.parse_args()
-# model_type = args.model
-# fname_state = args.parameter
-# fname_output = args.output
-# useGPU = args.gpu and torch.cuda.is_available()
+parser = argparse.ArgumentParser()
+parser.add_argument('-m', '--model', type=str)
+parser.add_argument('-p', '--parameter', type=str)
+parser.add_argument('-o', '--output', type=str)
+parser.add_argument('--gpu', action='store_true', default=False)
+args = parser.parse_args()
+model_type = args.model
+fname_state = args.parameter
+fname_output = args.output
+useGPU = args.gpu and torch.cuda.is_available()
 
-model_type = 'vae'
-fname_output = 'vae.smi'
+model_type = 'rnn'
+fname_output = 'rnn.smi'
 printInterval = 10
 useGPU = True
 
@@ -35,6 +35,7 @@ tokenizer = utils.get_tokenizer()
 if model_type == 'rnn':
     fname_state = os.path.join(os.path.dirname(
         utils.config['fname_rnn_parameters']), fname_state)
+    # python sample.py -m rnn -p rnn.param -o rnn.smi --gpu  ###用这行代码运行###
     model = rnn.RNN(**utils.config['rnn_param'],
                     state_fname=fname_state, device=device)
     model.loadState()
